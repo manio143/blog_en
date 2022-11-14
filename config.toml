@@ -8,3 +8,9 @@ enableGitInfo = true
 disableKinds = ['taxonomy', 'taxonomyTerm']
 [params]
     BookTheme = 'dark'
+    BookSection = '*' # all sections make a menu
+    BookComments = false
+    BookPortableLinks = true # experimental to use normal links instead of {{< relref >}}
+
+[markup.goldmark.renderer]
+    unsafe = true
