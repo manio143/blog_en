@@ -1,0 +1,10 @@
+baseURL = 'https://blog.marian.dziubiak.pl/'
+languageCode = 'en-us'
+title = "Marian's Blog"
+theme = 'hugo-book'
+
+# theme
+enableGitInfo = true
+disableKinds = ['taxonomy', 'taxonomyTerm']
+[params]
+    BookTheme = 'dark'
