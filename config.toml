@@ -1,4 +1,4 @@
-baseURL = 'https://blog.marian.dziubiak.pl/'
+baseURL = 'https://devblog.dziubiak.pl/'
 languageCode = 'en-us'
 title = "Marian's Blog"
 theme = 'hugo-book'
