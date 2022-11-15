@@ -11,6 +11,9 @@ disableKinds = ['taxonomy', 'taxonomyTerm']
     BookSection = '*' # all sections make a menu
     BookComments = false
     BookPortableLinks = true # experimental to use normal links instead of {{< relref >}}
+    BookLogo = 'manio.png'
+
+    images = ['blog.jpg']
 
 [markup.goldmark.renderer]
-    unsafe = true
+    unsafe = true # allow HTML in posts

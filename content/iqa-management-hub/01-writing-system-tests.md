@@ -1,5 +1,6 @@
 ---
 title: 1. Writing system tests
+images: ['iqa-management-hub/01-writing-system-tests.jpg']
 ---
 
 # 1. Writing system tests
