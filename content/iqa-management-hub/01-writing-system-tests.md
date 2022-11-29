@@ -190,3 +190,67 @@ services.AddHttpClient(RequestBuilder.HttpClientName)
 ```
 
 We disable redirects and cookies on the `HttpClientHandler` because we add middleware to handle it instead.
+
+## Emails
+Nowadays it feels like emails are a bit of a thing of the past, but at the same time they are everywhere.
+Products like SendGrid enable you to make a HTTP request to their server and they take care of sending the email.
+But without modern solutions it is still possible to send email over the basic SMTP protocol.
+And that is exactly what Management Hub is doing.
+
+Usually you could write the email to memory or the file system for testing.
+But to have additional confidence in my system I want to make sure the mailing library I use is able to send the email properly over SMTP.
+
+So in my tests I included the library [netDumbster](https://github.com/cmendible/netDumbster) - a simple SMTP server, which allows me to receive emails sent by the web service. In order to not have to run my tests with admin privileges I configured both the service and the library to work on port 4025.
+
+I've used the `IHostedService` interface on my wrapper around the SMTP server to start it once for the whole testing process.
+
+```csharp
+services.AddSingleton<EmailProvider>();
+// auto-start email server
+services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<EmailProvider>());
+```
+
+Then the test receives the wrapper from the DI framework and checks the incoming messages (in a polling fashion in case there's a delay between HTTP response and email being sent) for the one matching a predicate.
+
+```csharp
+public async Task<SmtpMessage> PollAsync(Func<SmtpMessage, bool> predicate, TimeSpan? timeout = null)
+{
+    timeout ??= TimeSpan.FromSeconds(10);
+    using var cts = new CancellationTokenSource(timeout.Value);
+    while (true)
+    {
+        Assert.False(cts.Token.IsCancellationRequested, "Smtp polling timeout");
+
+        var message = this.emailMessages.SingleOrDefault(predicate);
+        if (message != null)
+            return message;
+
+        await Task.Delay(PollingInterval);
+    }
+}
+```
+
+## Unique persistent users
+As I started writing the tests I decided it's a good idea to have each test go through a full cycle of setup, assertion and cleanup.
+This means creating a new user, setting up new objects in the database, executing some actions, and finally removing all created things from the database.
+I found it an issue to give all tests the same email address, because they can run in parallel and I wouldn't want them to mess with one another.
+But random ids are also bad, because they can lead a test to fail some of the time if a bad id is causing an issue.
+Or in my case, if a test fails and there's a bug in the cleanup code, having a persistent id can help execute the cleanup at the beginning of the next test run.
+
+I used a simple mechanism of having a helper method which takes a string argument with `[CallerMemberName]` which is the name of the test method, an integer seed (in case one test needs multiple users) and returns a user context object, which implements `IDisposable` to perform cleanup.
+
+From the name of the method I calculate a stable hash (don't use `GetHashCode` - it is stable only within a single run) using the `FarmHash64` algorithm from [FastHashes](https://github.com/TommasoBelluzzo/FastHashes/) and converting the result to a Base64 string (which makes a valid email username).
+Also needed to cast the email `ToLower()` because the service was configured with case insensitive email comparisons.
+
+```csharp
+private static string GenerateEmailFromString(string input, int seed = 0)
+{
+    var inputAsByteSpan = MemoryMarshal.Cast<char, byte>(input.AsSpan());
+    // We're using a stable hashing algorithm here to ensure
+    // the same email is use for a given test between runs
+    string hash = Convert.ToBase64String(HashAlgorithm.ComputeHash(inputAsByteSpan));
+    string seedStr = seed != 0 ? seed.ToString() : string.Empty;
+    // Need to call ToLower, because Devise is doing that before saving the email to the database
+    return $"user_{hash.ToLowerInvariant()}{seedStr}@example.com";
+}
+```
