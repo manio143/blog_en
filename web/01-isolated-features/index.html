@@ -1,0 +1,114 @@
+<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="1. Isolated web features within a single ASP.NET Core service # We&rsquo;ve been discussion recently at work how we can increase our velocity for the team. I went to think and saw that a lot of new projects have a high upfront cost when it comes to provisioning the resources, setting up the build and deployment pipelines, etc. This is fine for longer running projects but would be delaying quick experiments much more than it should."><meta name=theme-color content="#FFFFFF"><meta name=color-scheme content="light dark"><meta property="og:title" content="1. Isolated web features within a single ASP.NET Core service"><meta property="og:description" content="1. Isolated web features within a single ASP.NET Core service # We&rsquo;ve been discussion recently at work how we can increase our velocity for the team. I went to think and saw that a lot of new projects have a high upfront cost when it comes to provisioning the resources, setting up the build and deployment pipelines, etc. This is fine for longer running projects but would be delaying quick experiments much more than it should."><meta property="og:type" content="article"><meta property="og:url" content="https://devblog.dziubiak.pl/web/01-isolated-features/"><meta property="og:image" content="https://devblog.dziubiak.pl/blog.jpg"><meta property="article:section" content="web"><meta property="article:modified_time" content="2023-11-09T11:14:49+00:00"><title>1. Isolated web features within a single ASP.NET Core service | Marian's Blog</title>
+<link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png type=image/x-icon><link rel=stylesheet href=/book.min.4b35fed0bea034bbc19c89c71e14b73fb9c68cfcc586b9382adfb9b7b103ba06.css integrity="sha256-SzX+0L6gNLvBnInHHhS3P7nGjPzFhrk4Kt+5t7EDugY=" crossorigin=anonymous><script defer src=/flexsearch.min.js></script><script defer src=/en.search.min.60d37043abd14746794b53e2accd83ff1f72473001402e877326b2f88d9f3832.js integrity="sha256-YNNwQ6vRR0Z5S1PirM2D/x9yRzABQC6Hcyay+I2fODI=" crossorigin=anonymous></script></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
+<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><img src=/manio.png alt=Logo><span>Marian's Blog</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><ul><li><a href=/iqa-management-hub/>IQA Management Hub</a><ul><li><a href=/iqa-management-hub/01-writing-system-tests/>1. Writing system tests</a></li></ul></li><li><a href=/stride/>Stride</a><ul><li><a href=/stride/01-nuget-plugins/>1. Using NuGet packages as plugins</a></li></ul></li><li><a href=/telemetry/>Telemetry</a><ul><li><a href=/telemetry/01-exporting-eventsource-locally/>1. Exporting EventSource logs to CSV</a></li></ul></li><li><a href=/web/>Web</a><ul><li><a href=/web/01-isolated-features/ class=active>1. Isolated web features within a single ASP.NET Core service</a></li></ul></li></ul></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu>
+</label><strong>1. Isolated web features within a single ASP.NET Core service</strong>
+<label for=toc-control><img src=/svg/toc.svg class=book-icon alt="Table of Contents"></label></div><aside class="hidden clearfix"><nav id=TableOfContents><ul><li><a href=#request-pipeline-and-branching>Request pipeline and branching</a></li><li><a href=#single-startup>Single startup</a></li><li><a href=#discovering-controllers-from-other-assemblies>Discovering controllers from other assemblies</a></li><li><a href=#automatic-route-prefix-for-controllers-and-swagger-groups>Automatic route prefix for controllers and Swagger groups</a></li><li><a href=#isolated-di>Isolated DI</a></li></ul></nav></aside></header><article class=markdown><h1 id=1-isolated-web-features-within-a-single-aspnet-core-service>1. Isolated web features within a single ASP.NET Core service
+<a class=anchor href=#1-isolated-web-features-within-a-single-aspnet-core-service>#</a></h1><p>We&rsquo;ve been discussion recently at work how we can increase our velocity for the team. I went to think and saw that a lot of new projects have a high upfront cost when it comes to provisioning the resources, setting up the build and deployment pipelines, etc. This is fine for longer running projects but would be delaying quick experiments much more than it should.</p><p>I came up with the question - is it possible to host multiple separate projects within a single ASP.NET Core service? This would make us go once through the initial setup, allow the team to create multiple experiments and when an experiment is deemed good for running long term it would get extracted into a new fully fledged service so that it can be scaled up.</p><p>The key thing I had to worry about here is making the features as independent from the host and each other as possible, while keeping the cost of adding a new experiment low. Interdependence could cause a lot of trouble during extraction.</p><p>I tried to see if there was anything already done for this topic under such terms as &ldquo;multi-tenant&rdquo;, but the articles are generally focused on multiple tenants using the same app, vs hosting multiple tenant apps in the same service.</p><h2 id=request-pipeline-and-branching>Request pipeline and branching
+<a class=anchor href=#request-pipeline-and-branching>#</a></h2><p>ASP.NET Core allows you to configure branches in your request pipeline (
+<a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-7.0#branch-the-middleware-pipeline">docs</a>). Each branch can be running different middlewares, possibly configured differently. This is great because it means we can isolate the experiments - instead of them relying on the shared middleware setup, they need to explicitly write up their own request pipeline which can later be easily transferred during extraction.</p><p>The branching can either preserve tha path in the request or move the prefix by which we branched to the
+<a href=https://andrewlock.net/understanding-pathbase-in-aspnetcore/>path base</a>. Routing is applied on top of a path base. With manually mapped endpoints (e.g. using <code>MapGet()</code>) this can be used easily to isolate the path prefix from the paths in routes. However, my use case is about making it work with controllers. When you say <code>MapControllers()</code> it applies to all controllers known to the application. And unfortunately controllers are resolved at the host level, not at the request pipeline level. This means that if two features use the <code>/</code> route we can&rsquo;t really differentiate that across branches. Hence for me I had to set <code>preserveMatchedPathSegment: true</code> and add a prefix to each route in a given feature.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-csharp data-lang=csharp><span style=display:flex><span><span style=color:#75715e>// feature initializer</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>return</span> appBuilder.Map(routePrefix, preserveMatchedPathSegment: <span style=color:#66d9ef>true</span>, app =&gt;
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>  <span style=color:#75715e>// configure feature specific pipeline</span>
+</span></span><span style=display:flex><span>});
+</span></span></code></pre></div><h2 id=single-startup>Single startup
+<a class=anchor href=#single-startup>#</a></h2><p>Something I had to discover - when using ASP.NET Core we don&rsquo;t get the same treatment of building request pipelines as we do with configuring services. Likely because order of adding distinct services doesn&rsquo;t matter, but order of adding middleware does. Therefore all middleware must be configured within a single Startup class.</p><p>In my case I wanted each feature to be independent and have it&rsquo;s own method for configuring the pipeline. I did a quick trick of creating a wrapper class that I can put in DI and then resolve in my Startup to apply feature specific services.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-csharp data-lang=csharp><span style=display:flex><span><span style=color:#66d9ef>internal</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>IsolatedFeatureInitializer</span>
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>public</span> Action&lt;IApplicationBuilder&gt; Initializer { <span style=color:#66d9ef>get</span>; }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>public</span> IsolatedFeatureInitializer(Action&lt;IApplicationBuilder&gt; initializer)
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>    Initializer = initializer;
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Startup</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>public</span> <span style=color:#66d9ef>void</span> Configure(IApplicationBuilder app)
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>  <span style=color:#75715e>// any middleware before will be executed for all requests</span>
+</span></span><span style=display:flex><span>  IEnumerable&lt;IsolatedFeatureInitializer&gt; initializers = app.ApplicationServices.GetServices&lt;IsolatedFeatureInitializer&gt;();
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>foreach</span> (IsolatedFeatureInitializer initializer <span style=color:#66d9ef>in</span> initializers)
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>    initializer.Initializer(app);
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>  <span style=color:#75715e>// any middleware after will be executed only for non-isolated requests</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h2 id=discovering-controllers-from-other-assemblies>Discovering controllers from other assemblies
+<a class=anchor href=#discovering-controllers-from-other-assemblies>#</a></h2><p>My extension methods for feature management were in a project that didn&rsquo;t reference the features. As such the controllers were not auto-discovered and I had to add:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-csharp data-lang=csharp><span style=display:flex><span>services.AddMvcCore().AddApplicationPart(<span style=color:#66d9ef>typeof</span>(Feature).Assembly);
+</span></span></code></pre></div><p>Reference:
+<a href=https://andrewlock.net/when-asp-net-core-cant-find-your-controller-debugging-application-parts/>When ASP.NET Core can&rsquo;t find your controller: debugging application parts</a>.</p><h2 id=automatic-route-prefix-for-controllers-and-swagger-groups>Automatic route prefix for controllers and Swagger groups
+<a class=anchor href=#automatic-route-prefix-for-controllers-and-swagger-groups>#</a></h2><p>I was able to use an MVC convention to modify all controllers in the feature assembly.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-csharp data-lang=csharp><span style=display:flex><span>services.AddMvcCore(c =&gt;
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>  c.Conventions.Add(<span style=color:#66d9ef>new</span> IsolatedFeatureConvention(routePrefix, <span style=color:#66d9ef>typeof</span>(Feature).Assembly));
+</span></span><span style=display:flex><span>})
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>internal</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>IsolatedFeatureConvention</span> : IActionModelConvention
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>private</span> <span style=color:#66d9ef>readonly</span> <span style=color:#66d9ef>string</span> m_featureName;
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>private</span> <span style=color:#66d9ef>readonly</span> Assembly m_sourceAssembly;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>public</span> IsolatedFeatureConvention(<span style=color:#66d9ef>string</span> featureName, Assembly sourceAssembly)
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>    m_featureName = featureName;
+</span></span><span style=display:flex><span>    m_sourceAssembly = sourceAssembly;
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>void</span> Apply(ActionModel action)
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (action.Controller.ControllerType.Assembly == m_sourceAssembly)
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#75715e>// apply group name to separate the actions for Swagger display</span>
+</span></span><span style=display:flex><span>      <span style=color:#75715e>// cannot start with / as it is removed from the swagger document url</span>
+</span></span><span style=display:flex><span>      action.ApiExplorer.GroupName = m_featureName.TrimStart(<span style=color:#e6db74>&#39;/&#39;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>      <span style=color:#75715e>// enforce a route prefix for the feature actions</span>
+</span></span><span style=display:flex><span>      AttributeRouteModel routePrefix = <span style=color:#66d9ef>new</span>(<span style=color:#66d9ef>new</span> RouteAttribute(m_featureName));
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>foreach</span> (SelectorModel selector <span style=color:#66d9ef>in</span> action.Selectors)
+</span></span><span style=display:flex><span>      {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> (selector.AttributeRouteModel != <span style=color:#66d9ef>null</span>)
+</span></span><span style=display:flex><span>        {
+</span></span><span style=display:flex><span>          <span style=color:#75715e>// in order for this to work the controller cation cannot have a route prefix starting with &#39;/&#39; which is considered an override</span>
+</span></span><span style=display:flex><span>          selector.AttributeRouteModel = AttributeRouteModel.CombineAttributeRouteModel(routePrefix, selector.AttributeRouteModel);
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>else</span>
+</span></span><span style=display:flex><span>        {
+</span></span><span style=display:flex><span>          selector.AttributeRouteModel = routePrefix;
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>      }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>Further reading:
+<a href=https://github.com/domaindrivendev/Swashbuckle.AspNetCore/issues/562>GroupName -> Swagger doc</a>,
+<a href=https://github.com/domaindrivendev/Swashbuckle.AspNetCore#list-multiple-swagger-documents>Swagger UI</a>, if you want to include version:
+<a href=https://github.com/dotnet/aspnet-api-versioning/wiki/API-Explorer-Options#format-group-name>this</a> and
+<a href=https://github.com/dotnet/aspnet-api-versioning/issues/516>this</a>.</p><h2 id=isolated-di>Isolated DI
+<a class=anchor href=#isolated-di>#</a></h2><p>Ideally the features would be completely separated with regards to dependencies. There are some things that need to be defined in the host (e.g. hosted services, healthchecks, controller configuration), but most dependencies will be needed in the context of requests. Luckily for us, the dependencies are resolved in layers. A middleware is created using dependencies resolved as the pipeline progresses to that middleware. Same for controllers. It means we can override the value of <code>HttpContext.RequestServices</code> with another service provider and any middleware further down in the pipeline will resolve its dependencies using the override.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-csharp data-lang=csharp><span style=display:flex><span><span style=color:#66d9ef>internal</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>IsolatedFeatureMiddleware</span>
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>private</span> <span style=color:#66d9ef>readonly</span> RequestDelegate m_next;
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>private</span> <span style=color:#66d9ef>readonly</span> IServiceProvider m_featureServices;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>public</span> IsolatedFeatureMiddleware(RequestDelegate next, IServiceProvider featureServices)
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>    m_next = next;
+</span></span><span style=display:flex><span>    m_featureServices = featureServices;
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>async</span> Task InvokeAsync(HttpContext context)
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>    IServiceProvider originalProvider = context.RequestServices;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>try</span>
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>using</span> IServiceScope scope = m_featureServices.CreateScope();
+</span></span><span style=display:flex><span>      context.RequestServices = scope.ServiceProvider;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>await</span> m_next(context);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>finally</span>
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      context.RequestServices = originalProvider;
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>You may want to create links back to the host for singleton instances. The way I went about it is that I clone the <code>IServiceCollection</code> used to configure the host, while redirecting singleton references to the hosts <code>IServiceProvider</code> (except for open generic types).</p></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><span class="flex align-center" title='Last modified by Marian Dziubiak | November 9, 2023'><img src=/svg/calendar.svg class=book-icon alt=Calendar>
+<span>Last modified November 9, 2023</span></span></div></div><script>(function(){function e(e){const t=window.getSelection(),n=document.createRange();n.selectNodeContents(e),t.removeAllRanges(),t.addRange(n)}document.querySelectorAll("pre code").forEach(t=>{t.addEventListener("click",function(){if(window.getSelection().toString())return;e(t.parentElement),navigator.clipboard&&navigator.clipboard.writeText(t.parentElement.textContent)})})})()</script></footer><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents><ul><li><a href=#request-pipeline-and-branching>Request pipeline and branching</a></li><li><a href=#single-startup>Single startup</a></li><li><a href=#discovering-controllers-from-other-assemblies>Discovering controllers from other assemblies</a></li><li><a href=#automatic-route-prefix-for-controllers-and-swagger-groups>Automatic route prefix for controllers and Swagger groups</a></li><li><a href=#isolated-di>Isolated DI</a></li></ul></nav></div></aside></main></body></html>
