@@ -50,6 +50,8 @@ The `Microsoft.Extensions.Configuration` solves the issue (1) by allowing you to
 
 But we still need to solve for (2). There is a decent framework for .NET [Microsoft.FeatureManagement](https://github.com/microsoft/FeatureManagement-Dotnet) and you can read about how to get started with it in this wonderful (but a little old) [series by Andrew Locke](https://andrewlock.net/series/adding-feature-flags-to-an-asp-net-core-app/). There are other solutions like [this library with ASP.NET UI](https://github.com/Odonno/FeatureManagement.UI) and now I'm looking forward for open source integrations with the new [Microsoft.Extensions.Options.Contextual](https://github.com/dotnet/extensions/tree/main/src/Libraries/Microsoft.Extensions.Options.Contextual).
 
+> I actually got inspired to write a library myself. Check out [Excos.Options](https://github.com/manio143/excos).
+
 Regardless of which lib you go with, you want to make your experiments sticky to a browser session or user identifier (for authenticated experiences) to ensure consistency (imagine the UI changes when you refresh the page - yuck!).
 
 You want to end up with 50% of users getting the feature variant A and 50% getting the variant B. I recently learned it's very important to have a **very** consistent 50/50 split. Otherwise you can get into a Signal Ratio Mismatch - which means more users see one of the variants than the other. What's the big deal? It can mean that another factor is affecting the situation, and remember, we said we want our feature to be the only varying factor. There's a cool [paper on the topic](https://dl.acm.org/doi/10.1145/3292500.3330722).
