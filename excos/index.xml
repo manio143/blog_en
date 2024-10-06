@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Excos on Marian's Blog</title><link>https://devblog.dziubiak.pl/excos/</link><description>Recent content in Excos on Marian's Blog</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://devblog.dziubiak.pl/excos/index.xml" rel="self" type="application/rss+xml"/><item><title>1. Simple CI/CD pipeline</title><link>https://devblog.dziubiak.pl/excos/01-simple-cd-pipeline/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://devblog.dziubiak.pl/excos/01-simple-cd-pipeline/</guid><description>&lt;h1 id="1-simple-cicd-pipeline">
+ 1. Simple CI/CD pipeline
+ &lt;a class="anchor" href="#1-simple-cicd-pipeline">#&lt;/a>
+&lt;/h1>
+&lt;p>Before I start writing code for a new project I want to set up a very simple pipeline for getting it deployed.
+I decided to use Docker containers as means of packaging the app since they offer a lot of simplicity once built.
+If I was using a cloud platform for running containers it would likely come with some deployment system and a GitHub integration.
+But I want to keep this project fairly low cost for now. Instead of using a big cloud provider I&amp;rsquo;m renting a small VPS for 8 euro a month.&lt;/p></description></item></channel></rss>
