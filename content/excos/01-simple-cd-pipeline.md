@@ -103,6 +103,24 @@ The script could also check that the `docker-compose.yml` is not making the cont
 
 Afterwards verify the config with `sudo visudo -c` and you may have to run `sudo chmod 0440 /etc/sudoers.d/<user>` to restrict access to this file.
 
+## Disk space cleanup
+
+As we are pushing images onto the server we need to be conscious of how much space they take.
+You should strive for building small container images with the minimal set of required dependencies, but even then they can add up and clog up the disk.
+Therefore you should look to clean up previous images after deployment.
+
+The docker [prune](https://docs.docker.com/engine/manage-resources/pruning/) command can be used to delete unused resources.
+If you're versioning the images such that they contain build number, rerunning CI on a previous commit will anyways create a new image so you can safely remove anything older.
+But if you want to keep the last N images for easy rollback to a previous version:
+
+```bash
+docker rmi $(docker images -q <repository/image> | tail -n +<N+1>)
+```
+
+The name passed in doesn't contain the tag, but starts with the repository (if not from Docker Hub).
+The images command returns images in order, latest first.
+The tail command prints lines starting from X if we pass `-n X`, so to skip N latest images we pass N+1.
+
 ## Conclusion
 
 There we have it - a simple CI/CD pipeline which pushes a container image directly into the target host and uses docker compose to instantiate, while keeping in mind the security aspect of allowing external access to your server.
