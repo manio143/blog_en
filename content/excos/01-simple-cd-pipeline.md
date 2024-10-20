@@ -103,6 +103,25 @@ The script could also check that the `docker-compose.yml` is not making the cont
 
 Afterwards verify the config with `sudo visudo -c` and you may have to run `sudo chmod 0440 /etc/sudoers.d/<user>` to restrict access to this file.
 
+#### Example limiting script
+
+```bash
+sudo curl -L -o /usr/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+sudo chmod +x /usr/bin/yq
+```
+
+```bash
+#!/bin/bash
+# docker-compose-up.sh
+
+if [[ $(yq '.services.*.runtime' $1) != "null" ]]; then
+  echo "The docker-compose file tries to override the default runtime" >&2
+  exit 1
+fi
+
+docker compose -f $1 up -d
+```
+
 ## Disk space cleanup
 
 As we are pushing images onto the server we need to be conscious of how much space they take.
