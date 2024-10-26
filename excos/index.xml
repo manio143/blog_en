@@ -5,4 +5,10 @@
 &lt;p>Before I start writing code for a new project I want to set up a very simple pipeline for getting it deployed.
 I decided to use Docker containers as means of packaging the app since they offer a lot of simplicity once built.
 If I was using a cloud platform for running containers it would likely come with some deployment system and a GitHub integration.
-But I want to keep this project fairly low cost for now. Instead of using a big cloud provider I&amp;rsquo;m renting a small VPS for 8 euro a month.&lt;/p></description></item></channel></rss>
+But I want to keep this project fairly low cost for now. Instead of using a big cloud provider I&amp;rsquo;m renting a small VPS for 8 euro a month.&lt;/p></description></item><item><title>3. Implementing privacy compliance</title><link>https://devblog.dziubiak.pl/excos/03-privacy-compliance/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://devblog.dziubiak.pl/excos/03-privacy-compliance/</guid><description>&lt;h1 id="3-implementing-privacy-compliance">
+ 3. Implementing privacy compliance
+ &lt;a class="anchor" href="#3-implementing-privacy-compliance">#&lt;/a>
+&lt;/h1>
+&lt;p>In the modern internet everyone and their mother is collecting data about users.
+And to be fair, I also want to collect some for legitimate reasons - making a better product and a better experience to my users.
+But because there&amp;rsquo;s a lot of nefarious actors out there we now have regulations in place that explicitly require services to provide users with more control over their data.&lt;/p></description></item></channel></rss>
