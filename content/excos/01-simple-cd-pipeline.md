@@ -145,3 +145,12 @@ The tail command prints lines starting from X if we pass `-n X`, so to skip N la
 There we have it - a simple CI/CD pipeline which pushes a container image directly into the target host and uses docker compose to instantiate, while keeping in mind the security aspect of allowing external access to your server.
 
 Once I have this up and running on GitHub I will add here a link to the workflow definition.
+
+## Extra: Package update
+
+For the CI portion of this, you should look to keep your dependencies up to date.
+You can use something like [Renovate](https://github.com/renovatebot/renovate) or at least [Dependabot](https://github.com/dependabot) or set up your own thing.
+
+For example I used [dotnet-outdated](https://github.com/dotnet-outdated/dotnet-outdated) in a simple GitHub [action](https://github.com/excos-platform/excos/blob/main/.github/workflows/dotnet-package-update.yaml) to update my package dependencies an create PR on a weekly basis.
+
+Btw, I recommend watching this talk: [CI/CD antipatterns](https://www.youtube.com/watch?v=OonABHdHD2I)

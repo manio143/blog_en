@@ -93,7 +93,7 @@ For this purpose we're going to implement the following:
     * This id is tied to a user alias that they agreed can be shared publicly.
     * Upon user closing their account, the connection between their persistent ID and operational ID is severed.
 3. User has at least one telemetry ID (`tyid`)
-    * This id is created by hashing the operational ID with a salt that the user can ask to be rotated, which de-links all previously collected for them telemetry.
+    * This id is created by hashing the operational ID with a salt that the user can ask to be rotated, which de-links all previously collected for them telemetry. _Resulting in a UUIDv5._
     * This id is used in all telemetry instead of the operational ID, which preserves unique user semantics and facilitates debugging.
     * Upon user closing their account the salt is cleared or rotated. 
 
