@@ -93,10 +93,11 @@ For this we will create a new file under `/etc/sudoers.d/<user>` for our specifi
 
 ```
 <user>  ALL=(root:docker) NOPASSWD: /usr/bin/docker load
-<user>  ALL=(root:docker) NOPASSWD: /usr/bin/docker compose up -d -f *
+<user>  ALL=(root:docker) NOPASSWD:SETENV: /usr/bin/docker compose up -d -f *
 ```
 
 This means the user can impersonate only the root user under the docker group, they will not be asked for password and they are allowed to execute the specified commands.
+The `SETENV` flag allows us to pass environment variables with `sudo -E` which can be useful for parameterized compose files.
 Note that `*` means any string, so the user can provide extra parameters to the compose command apart from just the file.
 To restrict it further we should create a shell script which will validate arguments passed to it and apply them correctly.
 The script could also check that the `docker-compose.yml` is not making the containers run with higher privileges than we want.
@@ -114,8 +115,9 @@ sudo chmod +x /usr/bin/yq
 #!/bin/bash
 # docker-compose-up.sh
 
-if [[ $(yq '.services.*.runtime' $1) != "null" ]]; then
-  echo "The docker-compose file tries to override the default runtime" >&2
+RUNTIMES=$(yq '.services.*.runtime' ./docker-compose.yml)
+if [[ "$RUNTIMES" != null* ]]; then
+  echo -e "The docker-compose file tries to override the default runtime\n$RUNTIMES" >&2
   exit 1
 fi
 
@@ -139,6 +141,18 @@ docker rmi $(docker images -q <repository/image> | tail -n +<N+1>)
 The name passed in doesn't contain the tag, but starts with the repository (if not from Docker Hub).
 The images command returns images in order, latest first.
 The tail command prints lines starting from X if we pass `-n X`, so to skip N latest images we pass N+1.
+
+Full script (which takes 1 parameter, if not deletes all images):
+
+```bash
+#!/bin/bash
+OLD_IMAGES=$(docker images -q $1 | tail -n +4)
+if [ -n "$OLD_IMAGES" ]; then
+  docker rmi $OLD_IMAGES
+fi
+# remove dangling images
+docker image prune -f
+```
 
 ## Conclusion
 
