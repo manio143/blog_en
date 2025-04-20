@@ -124,6 +124,8 @@ fi
 docker compose -f $1 up -d
 ```
 
+_Update_: Adding `--wait --wait-timeout 180` to the last command can allow you to wait until all containers are healthy or fail deployment.
+
 ## Disk space cleanup
 
 As we are pushing images onto the server we need to be conscious of how much space they take.
