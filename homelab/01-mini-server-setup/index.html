@@ -1,0 +1,87 @@
+<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="
+  1. Mini server setup
+  #
+
+
+  The idea
+  #
+
+I was browsing reddit, as one does, and stumbled over the 
+  r/MiniPC and found a spreadsheet with a ton of models of small computers.
+I already was thinking of having a small server at home and decided to find some nice small computer that wouldn&rsquo;t be very expensive.
+Finally I managed to find Beelink EQR5 on Amazon with a discount of like 30%.
+I decided to get it and in turn stop paying for a cheap VPS (8 euro a month).
+I get more power, more ram, more storage."><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://devblog.dziubiak.pl/homelab/01-mini-server-setup/"><meta property="og:site_name" content="Marian's Blog"><meta property="og:title" content="1. Mini server setup"><meta property="og:description" content="1. Mini server setup # The idea # I was browsing reddit, as one does, and stumbled over the r/MiniPC and found a spreadsheet with a ton of models of small computers. I already was thinking of having a small server at home and decided to find some nice small computer that wouldn’t be very expensive. Finally I managed to find Beelink EQR5 on Amazon with a discount of like 30%. I decided to get it and in turn stop paying for a cheap VPS (8 euro a month). I get more power, more ram, more storage."><meta property="og:locale" content="en_us"><meta property="og:type" content="article"><meta property="article:section" content="homelab"><meta property="article:modified_time" content="2025-06-07T15:55:37+01:00"><meta property="og:image" content="https://devblog.dziubiak.pl/blog.jpg"><title>1. Mini server setup | Marian's Blog</title><link rel=icon href=/favicon.png><link rel=manifest href=/manifest.json><link rel=canonical href=https://devblog.dziubiak.pl/homelab/01-mini-server-setup/><link rel=stylesheet href=/book.min.fd39ad20cb6db54db836e84a1be9516780ad6aa6961bbd9a6b08e9f24f44785f.css integrity="sha256-/TmtIMtttU24NuhKG+lRZ4CtaqaWG72aawjp8k9EeF8=" crossorigin=anonymous><script defer src=/fuse.min.js></script><script defer src=/en.search.min.ec33ec73f2653262a073e6c10fae2fc54f14e7c12d4161c7aff900255d127c48.js integrity="sha256-7DPsc/JlMmKgc+bBD64vxU8U58EtQWHHr/kAJV0SfEg=" crossorigin=anonymous></script><script defer src=https://cloud.umami.is/script.js data-website-id=487bcc6b-5cf2-4079-af93-72592662cf29></script></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
+<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><img src=/manio.png alt=Logo class=book-icon><span>Marian's Blog</span></a></h2><div class="book-search hidden"><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><script>document.querySelector(".book-search").classList.remove("hidden")</script><ul><li><a href=/excos/>Excos</a><ul><li><a href=/excos/01-simple-cd-pipeline/>1. Simple CI/CD pipeline</a></li><li><a href=/excos/03-privacy-compliance/>3. Implementing privacy compliance</a></li></ul></li><li><a href=/homelab/>Homelab</a><ul><li><a href=/homelab/01-mini-server-setup/ class=active>1. Mini server setup</a></li></ul></li><li><a href=/iqa-management-hub/>IQA Management Hub</a><ul><li><a href=/iqa-management-hub/01-writing-system-tests/>1. Writing system tests</a></li></ul></li><li><a href=/stride/>Stride</a><ul><li><a href=/stride/01-nuget-plugins/>1. Using NuGet packages as plugins</a></li></ul></li><li><a href=/telemetry/>Telemetry</a><ul><li><a href=/telemetry/01-exporting-eventsource-locally/>1. Exporting EventSource logs to CSV</a></li></ul></li><li><a href=/web/>Web</a><ul><li><a href=/web/01-isolated-features/>1. Isolated web features within a single ASP.NET Core service</a></li><li><a href=/web/02-experimentation/>2. Short guide to experimentation</a></li></ul></li></ul></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu></label><h3>1. Mini server setup</h3><label for=toc-control><img src=/svg/toc.svg class=book-icon alt="Table of Contents"></label></div><aside class="hidden clearfix"><nav id=TableOfContents><ul><li><a href=#the-idea>The idea</a></li><li><a href=#step-1-operating-system>Step 1: Operating system</a></li><li><a href=#step-2-extra-storage>Step 2: Extra storage</a></li><li><a href=#step-3-software-management>Step 3: Software management</a></li><li><a href=#step-4-dynamic-dns>Step 4: Dynamic DNS</a></li><li><a href=#step-5-single-sign-on>Step 5: Single Sign On</a></li><li><a href=#step-6-monitoring>Step 6: Monitoring</a></li><li><a href=#extra-1-dns--dhcp>Extra 1: DNS + DHCP</a></li></ul></nav></aside></header><article class="markdown book-article"><h1 id=1-mini-server-setup>1. Mini server setup
+<a class=anchor href=#1-mini-server-setup>#</a></h1><h2 id=the-idea>The idea
+<a class=anchor href=#the-idea>#</a></h2><p>I was browsing reddit, as one does, and stumbled over the
+<a href=https://www.reddit.com/r/minipc/>r/MiniPC</a> and found a spreadsheet with a ton of models of small computers.
+I already was thinking of having a small server at home and decided to find some nice small computer that wouldn&rsquo;t be very expensive.
+Finally I managed to find Beelink EQR5 on Amazon with a discount of like 30%.
+I decided to get it and in turn stop paying for a cheap VPS (8 euro a month).
+I get more power, more ram, more storage.</p><p>What would I use it for?
+For one, I need a server for hosting my dev projects by the rule of having a deployment as part of the development lifecycle.
+And then I took inspiration from
+<a href=https://www.reddit.com/r/selfhosted>r/SelfHosted</a> and decided I want to run NextCloud so that I can store my photos (especially of my son) without storage limitations.</p><h2 id=step-1-operating-system>Step 1: Operating system
+<a class=anchor href=#step-1-operating-system>#</a></h2><p>I chose Debian LTS. I&rsquo;m familiar with the way Debian family systems are working and want something reliable.
+I installed it without GUI, just with SSH server.</p><p>While I used WiFi during installation, I wanted to use ethernet later but it was disabled (check with <code>lshw -c network -sanitize</code>).
+I could temporarily turn it on with <code>ip link set &lt;name> up</code> and to enable it permanently I edited <code>/etc/network/interfaces</code> to add <code>auto &lt;name></code> and <code>iface &lt;name> inet dhcp</code> lines.</p><h2 id=step-2-extra-storage>Step 2: Extra storage
+<a class=anchor href=#step-2-extra-storage>#</a></h2><p>The Beelink came with 500GB SSD and 16GB ram.
+I have a small 2TB hard drive over USB3.0 which I decided to plug in there for storing my files.</p><p>Decided to try and configure <code>autofs</code> to mount that hard drive automatically.
+I had used <code>fstab</code> in the past and had difficulties when the drive was not available at boot.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sh data-lang=sh><span style=display:flex><span><span style=color:#75715e># /etc/auto.master</span>
+</span></span><span style=display:flex><span><span style=color:#75715e># Cutom mount point under /mnt directory</span>
+</span></span><span style=display:flex><span>/mnt /etc/auto.mnt --timeout<span style=color:#f92672>=</span><span style=color:#ae81ff>60</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># /etc/auto.mnt</span>
+</span></span><span style=display:flex><span><span style=color:#75715e># This will mount /mnt/media</span>
+</span></span><span style=display:flex><span><span style=color:#75715e># in async mode (faster but data could be lost if server crashed)</span>
+</span></span><span style=display:flex><span><span style=color:#75715e># preventing device file nodes and preventing setuid (executing file as its owner)</span>
+</span></span><span style=display:flex><span>media -fstype<span style=color:#f92672>=</span>auto,async,nodev,nosuid :/dev/sda1
+</span></span></code></pre></div><h2 id=step-3-software-management>Step 3: Software management
+<a class=anchor href=#step-3-software-management>#</a></h2><p>I decided to try to use
+<a href=https://coolify.io/>Coolify</a> to manage what systems I would be running on the server.
+Had to rnn the install script a few times, but it was worth it cause it sends jokes like this:</p><blockquote><p>Your momma is so fat, you need to switch to NTFS to store a picture of her.</p></blockquote><p>When it installed I saved data from <code>/data/coolify/source/.env</code> to my password manager.
+Then I accessed the dashboard to create an account.
+Configured the notifications with Telegram via BotFather over a group chat.</p><h2 id=step-4-dynamic-dns>Step 4: Dynamic DNS
+<a class=anchor href=#step-4-dynamic-dns>#</a></h2><p>My ISP (Vergin Media IE) is providing IPv6 prefix leases. Once the lease expires I can get a new prefix which will cause the connected device to get a new public address.</p><p>I&rsquo;m going to leverage Cloudflare as my DNS provider and follow
+<a href=https://coolify.io/docs/knowledge-base/cloudflare/tunnels/all-resource>this guide</a> to configure a Cloudflare tunnel.
+This way I get easy TLS, don&rsquo;t have to worry about making my IP public, and by using a wildcard domain I can dynamically create service domain without editing the DNS table each time.</p><h2 id=step-5-single-sign-on>Step 5: Single Sign On
+<a class=anchor href=#step-5-single-sign-on>#</a></h2><p>I want to protect my services with SSO using Authentik. It&rsquo;s easy to add it with Coolify.
+I used Mailersend to get SMTP service for sending emails. Mailersend easily configured my DNS records on Cloudflare.</p><p>A thing to note here is that once a TXT DNS record for email was created on a subdomain, it no longer falls under the wildcard and I had to manually add a CNAME record for it and point it at the tunnel.</p><p>A second thing to note is that Authentik populates the protocol (http vs https) in links in the page content, so while the Cloudflare was upgrading me to HTTPS on the top level the browser was then blocking requests to API endpoints.
+To mitigate this I had to follow
+<a href=https://coolify.io/docs/knowledge-base/cloudflare/tunnels/full-tls>this doc</a> and create a HTTPS rule in the tunnel just for the specific subdomain, as well as change service to listen on https://*:9000 to trick proxy to into using http port 9000 while using https for resources in HTML.</p><p>TODO: setting up flow for users</p><h2 id=step-6-monitoring>Step 6: Monitoring
+<a class=anchor href=#step-6-monitoring>#</a></h2><p>I found out about
+<a href=https://victoriametrics.com/>Victoria Metrics</a> and decided to try and use it for me home lab monitoring.</p><p>I used
+<a href=https://github.com/VictoriaMetrics/VictoriaMetrics/tree/master/deployment/docker#docker-compose-environment-for-victoriametrics>Docker compose environment for VictoriaMetrics</a> to set up the metrics, logs and Grafana.</p><p>TODO: Describe the setup once we figure out the proxy issue with Grafana</p><p>Setup:
+<a href=https://github.com/manio143/homeserver/tree/main/telemetry>/homeserver/telemetry</a></p><h2 id=extra-1-dns--dhcp>Extra 1: DNS + DHCP
+<a class=anchor href=#extra-1-dns--dhcp>#</a></h2><p>I wanted to try running AdGuard Home to proxy DNS requests and allow blocking some ads domains and potentially adult content (for when my baby becomes a child).
+It was very easy to install with Coolify, but then the challenge was to get all devices on my network to connect to it.</p><p>Because I have a Virgin Media Hub router with no setting for DNS, I had to resort to disabling DHCP on the router and instead running my own server.
+Luckily that&rsquo;s built into AdGuard.</p><p>What I had to figure out is to create a docker network using
+<a href=https://docs.docker.com/engine/network/tutorials/macvlan/><code>macvlan</code> driver</a> which would make my container become part of the outer network of my router and start responding to DHCP requests.</p><pre tabindex=0><code>docker network create -d macvlan \
+  --subnet=192.168.0.0/24 \
+  --gateway=192.168.0.1 \
+  -o parent=eth0 \
+  local_macvlan
+</code></pre><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span><span style=color:#f92672>services</span>:
+</span></span><span style=display:flex><span>  <span style=color:#f92672>adguard</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>image</span>: <span style=color:#ae81ff>adguard/adguardhome:latest</span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>restart</span>: <span style=color:#ae81ff>unless-stopped</span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>volumes</span>:
+</span></span><span style=display:flex><span>      - <span style=color:#ae81ff>${WORK_DIR}:/opt/adguardhome/work</span>
+</span></span><span style=display:flex><span>      - <span style=color:#ae81ff>${CONF_DIR}:/opt/adguardhome/conf</span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>ports</span>:
+</span></span><span style=display:flex><span>      - <span style=color:#e6db74>&#34;53:53/udp&#34;</span> <span style=color:#75715e>#DNS</span>
+</span></span><span style=display:flex><span>      - <span style=color:#e6db74>&#34;53:53/tcp&#34;</span>
+</span></span><span style=display:flex><span>      - <span style=color:#e6db74>&#34;67:67/udp&#34;</span> <span style=color:#75715e>#DHCP</span>
+</span></span><span style=display:flex><span>      - <span style=color:#e6db74>&#34;68:68/udp&#34;</span> <span style=color:#75715e>#DHCP</span>
+</span></span><span style=display:flex><span>      - <span style=color:#e6db74>&#34;68:68/tcp&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>networks</span>:
+</span></span><span style=display:flex><span>      <span style=color:#f92672>local_macvlan</span>:
+</span></span><span style=display:flex><span>        <span style=color:#f92672>ipv4_address</span>: <span style=color:#ae81ff>192.168.0.2</span> <span style=color:#75715e># static IP</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#f92672>networks</span>:
+</span></span><span style=display:flex><span>  <span style=color:#f92672>local_macvlan</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>name</span>: <span style=color:#ae81ff>local_macvlan</span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>external</span>: <span style=color:#66d9ef>true</span>
+</span></span></code></pre></div><p>And it works very nicely. I kept IPv6 stateless distribution within the router, while IPv4 and DNS location is provided by my server.</p></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><span class="flex align-center" title='Last modified by Marian Dziubiak | June 7, 2025'><img src=/svg/calendar.svg class=book-icon alt=Calendar>
+<span>Last modified June 7, 2025</span></span></div></div><script>(function(){function e(e){const t=window.getSelection(),n=document.createRange();n.selectNodeContents(e),t.removeAllRanges(),t.addRange(n)}document.querySelectorAll("pre code").forEach(t=>{t.addEventListener("click",function(){if(window.getSelection().toString())return;e(t.parentElement),navigator.clipboard&&navigator.clipboard.writeText(t.parentElement.textContent)})})})()</script></footer><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents><ul><li><a href=#the-idea>The idea</a></li><li><a href=#step-1-operating-system>Step 1: Operating system</a></li><li><a href=#step-2-extra-storage>Step 2: Extra storage</a></li><li><a href=#step-3-software-management>Step 3: Software management</a></li><li><a href=#step-4-dynamic-dns>Step 4: Dynamic DNS</a></li><li><a href=#step-5-single-sign-on>Step 5: Single Sign On</a></li><li><a href=#step-6-monitoring>Step 6: Monitoring</a></li><li><a href=#extra-1-dns--dhcp>Extra 1: DNS + DHCP</a></li></ul></nav></div></aside></main></body></html>

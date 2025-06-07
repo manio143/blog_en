@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Homelab on Marian's Blog</title><link>https://devblog.dziubiak.pl/homelab/</link><description>Recent content in Homelab on Marian's Blog</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://devblog.dziubiak.pl/homelab/index.xml" rel="self" type="application/rss+xml"/><item><title>1. Mini server setup</title><link>https://devblog.dziubiak.pl/homelab/01-mini-server-setup/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://devblog.dziubiak.pl/homelab/01-mini-server-setup/</guid><description>&lt;h1 id="1-mini-server-setup">
+ 1. Mini server setup
+ &lt;a class="anchor" href="#1-mini-server-setup">#&lt;/a>
+&lt;/h1>
+&lt;h2 id="the-idea">
+ The idea
+ &lt;a class="anchor" href="#the-idea">#&lt;/a>
+&lt;/h2>
+&lt;p>I was browsing reddit, as one does, and stumbled over the 
+ &lt;a href="https://www.reddit.com/r/minipc/">r/MiniPC&lt;/a> and found a spreadsheet with a ton of models of small computers.
+I already was thinking of having a small server at home and decided to find some nice small computer that wouldn&amp;rsquo;t be very expensive.
+Finally I managed to find Beelink EQR5 on Amazon with a discount of like 30%.
+I decided to get it and in turn stop paying for a cheap VPS (8 euro a month).
+I get more power, more ram, more storage.&lt;/p></description></item></channel></rss>
