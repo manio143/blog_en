@@ -81,9 +81,13 @@ I found out about [Victoria Metrics](https://victoriametrics.com/) and decided t
 
 I used [Docker compose environment for VictoriaMetrics](https://github.com/VictoriaMetrics/VictoriaMetrics/tree/master/deployment/docker#docker-compose-environment-for-victoriametrics) to set up the metrics, logs and Grafana.
 
-TODO: Describe the setup once we figure out the proxy issue with Grafana
+Had to make sure to allow access to predefined network in coolify advanced settings. And restart proxy.
 
 Setup: [/homeserver/telemetry](https://github.com/manio143/homeserver/tree/main/telemetry)
+
+[Dominik's blog](https://dominikbritz.com/posts/victoria-metrics-grafana/)
+
+TODO: OAuth provider configuration to set editor/admin role
 
 ## Extra 1: DNS + DHCP
 
@@ -128,3 +132,5 @@ networks:
 ```
 
 And it works very nicely. I kept IPv6 stateless distribution within the router, while IPv4 and DNS location is provided by my server.
+
+But then I wanted to run DHCPv6 stateless with AdGuard... <https://aschmid-it.com/en/adguard-home-on-docker-with-ipv6/> except my router cannot turn off DHCP for IPv6 so I didn't use it in the end.
