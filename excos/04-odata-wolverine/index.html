@@ -1,0 +1,123 @@
+<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="
+  4. CQRS with OData and Wolverine
+  #
+
+⚠️NOTE: this post in unfinished, but I decided to push it, so I don&rsquo;t loose it.
+As I started to think about how I want to design Excos, I came to a conclusion that a modular monolith with an old school backend rendered UX and a public web API for programmatic access, all using event driven architecture with event sourcing, is something I want to pursue."><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://devblog.dziubiak.pl/excos/04-odata-wolverine/"><meta property="og:site_name" content="Marian's Blog"><meta property="og:title" content="4. CQRS with OData and Wolverine"><meta property="og:description" content="4. CQRS with OData and Wolverine # ⚠️NOTE: this post in unfinished, but I decided to push it, so I don’t loose it.
+As I started to think about how I want to design Excos, I came to a conclusion that a modular monolith with an old school backend rendered UX and a public web API for programmatic access, all using event driven architecture with event sourcing, is something I want to pursue."><meta property="og:locale" content="en_us"><meta property="og:type" content="article"><meta property="article:section" content="excos"><meta property="article:modified_time" content="2026-08-25T09:25:36+01:00"><meta property="og:image" content="https://devblog.dziubiak.pl/blog.jpg"><title>4. CQRS with OData and Wolverine | Marian's Blog</title><link rel=icon href=/favicon.png><link rel=manifest href=/manifest.json><link rel=canonical href=https://devblog.dziubiak.pl/excos/04-odata-wolverine/><link rel=stylesheet href=/book.min.2d7fec8e866046a7460a1cc86027535586803606a87c87da3098bcd8d5a2b62d.css integrity="sha256-LX/sjoZgRqdGChzIYCdTVYaANgaofIfaMJi82NWiti0=" crossorigin=anonymous><script defer src=/fuse.min.js></script><script defer src=/en.search.min.7620a25fcc48a9d3a1f5952fabcbdbb407633cfa8a6f9938fe70dced45449b40.js integrity="sha256-diCiX8xIqdOh9ZUvq8vbtAdjPPqKb5k4/nDc7UVEm0A=" crossorigin=anonymous></script><script defer src=https://cloud.umami.is/script.js data-website-id=487bcc6b-5cf2-4079-af93-72592662cf29></script></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
+<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><img src=/manio.png alt=Logo class=book-icon><span>Marian's Blog</span></a></h2><div class="book-search hidden"><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><script>document.querySelector(".book-search").classList.remove("hidden")</script><ul><li><a href=/ai/>AI</a><ul><li><a href=/ai/01-learning-vs-productivity/>1. Learning vs Productivity with AI</a></li></ul></li><li><a href=/excos/>Excos</a><ul><li><a href=/excos/01-simple-cd-pipeline/>1. Simple CI/CD pipeline</a></li><li><a href=/excos/03-privacy-compliance/>3. Implementing privacy compliance</a></li><li><a href=/excos/04-odata-wolverine/ class=active>4. CQRS with OData and Wolverine</a></li><li><a href=/excos/05-test-driven-development/>5. TDD with F#</a></li></ul></li><li><a href=/homelab/>Homelab</a><ul><li><a href=/homelab/01-mini-server-setup/>1. Mini server setup</a></li></ul></li><li><a href=/iqa-management-hub/>IQA Management Hub</a><ul><li><a href=/iqa-management-hub/01-writing-system-tests/>1. Writing system tests</a></li></ul></li><li><a href=/stride/>Stride</a><ul><li><a href=/stride/01-nuget-plugins/>1. Using NuGet packages as plugins</a></li></ul></li><li><a href=/telemetry/>Telemetry</a><ul><li><a href=/telemetry/01-exporting-eventsource-locally/>1. Exporting EventSource logs to CSV</a></li></ul></li><li><a href=/web/>Web</a><ul><li><a href=/web/01-isolated-features/>1. Isolated web features within a single ASP.NET Core service</a></li><li><a href=/web/02-experimentation/>2. Short guide to experimentation</a></li></ul></li></ul></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu></label><h3>4. CQRS with OData and Wolverine</h3><label for=toc-control><img src=/svg/toc.svg class=book-icon alt="Table of Contents"></label></div><aside class="hidden clearfix"><nav id=TableOfContents><ul><li><a href=#resources>Resources</a></li><li><a href=#command-and-query-responsibility-segregation>Command and Query Responsibility Segregation</a></li><li><a href=#odata-setup>OData setup</a></li></ul></nav></aside></header><article class="markdown book-article"><h1 id=4-cqrs-with-odata-and-wolverine>4. CQRS with OData and Wolverine
+<a class=anchor href=#4-cqrs-with-odata-and-wolverine>#</a></h1><p><em>⚠️NOTE: this post in unfinished, but I decided to push it, so I don&rsquo;t loose it.</em></p><p>As I started to think about how I want to design Excos, I came to a conclusion that a modular monolith with an old school backend rendered UX and a public web API for programmatic access, all using event driven architecture with event sourcing, is something I want to pursue.</p><p>Why? The monolith, because there no reason not to at this stage of the project. The server side rendered HTML, because I want to do frontend development differently than I&rsquo;ve experienced at work so far (and will write in the future more about it). A web API is just convenient for custom integrations. And event driven architecture to enable further integration points.</p><p>I decided to use modern
+<a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/?view=aspnetcore-8.0">Blazor</a> static server rendering with focus on
+<a href=https://developer.mozilla.org/en-US/docs/Web/API/Web_components>Web Components</a>,
+<a href=https://learn.microsoft.com/en-us/odata/webapi-8/overview>OData</a> for shaping the API and enabling rich queries,
+<a href=https://wolverinefx.net/>Wolverine</a> for event mediating and
+<a href=https://martendb.io/>Marten</a> for storage on top of Postgresql.</p><p>In this article I will dive a bit deeper into how it all fits together.</p><h2 id=resources>Resources
+<a class=anchor href=#resources>#</a></h2><p>I really like some of the ways how Microsoft Azure works.
+There&rsquo;s a clear hierarchy of a subscription, then resource group, then resource provider, then resource, then sub-resource, etc.</p><p>Anything that&rsquo;s part of my system is going to be defined as a resource within a hierarchy.
+And as I want to make my code modularized, each module can be thought of as a resource provider.</p><ul><li>At the root we have <code>organizations</code> (tenants).<ul><li>A tenant has <code>identities</code> that is users, clients and groups, with their <code>settings</code> and <code>permissions</code>.<ul><li>The settings collection will have instances of sections that can be provided by a module.</li><li>The permissions collection will list the resources the identity can access and with what roles (RBAC).</li></ul></li><li>A tenant has <code>projects</code> which are units of configuration for the subsystems.<ul><li>Again there&rsquo;s <code>settings</code> with sections defined by the modules.</li><li>And further resources which are either collections or singletons, as provided by the modules.</li></ul></li></ul></li></ul><p>The concept of collections and singletons comes from OData and is a very intuitive way to think about a resource hierarchy.
+Each of those defines a class of object types - e.g. <code>identities</code> collection can have both objects of type <code>user</code> or <code>client</code> which may have shared or distinct properties.</p><h2 id=command-and-query-responsibility-segregation>Command and Query Responsibility Segregation
+<a class=anchor href=#command-and-query-responsibility-segregation>#</a></h2><p>In short CQRS states that systems should embrace a difference between commands (updates or changes) and queries (reading system state).
+This means that we can split our data models into two: a write model and a read model.</p><p>We can then take it a step further to Event Sourcing, where the state of your system is represented through events.
+It allows us to describe changes precisely, keep a log of all changes to the objects, and compute a read-optimized view based on the events.</p><p>Wolverine and Marten enable a really nice event driven architecture, where the state is represented by the events that have occurred and other modules can subscribe to those events to create integrations with low coupling.
+The objects exposed through the API would be aggregates of event streams.</p><p>So when using OData for the web API layer, we&rsquo;ll be leveraging the GET requests with built-in filtering and selecting for queries (Marten supports <code>IQueryable</code> interface operations), while for commands, instead of allowing PATCH calls to modify the entity as a whole, we will leverage the declarations of actions (POST <code>/entity/action()</code>) for command execution.</p><p>Now, it&rsquo;s very important to strike a balance between very specific commands and more generalized ones. As I approach modeling the operations users would invoke on the entities in my system, I realized that some of the operations would be best consolidated under a single <code>Edit</code> event which carries with it the latest representation of the entity. This makes sense for scenarios where we don&rsquo;t have a specific set of state transitions which are closely represented by the events.</p><p>To make it more clear, let&rsquo;s look at a <code>FeatureRollout</code> entity, which has a <code>State</code> property deciding if that rollout is actively provided to clients, and such properties as targeting rules and configuration for the client. The following diagram can show small discrete events manipulating the <code>State</code>, while all other properties would be bulk updated with an <code>Edit</code> event as it would not make sense to have 2 separate events, one for editing targeting rules and one for editing configuration.</p><script src=/mermaid.min.js></script><script>mermaid.initialize({flowchart:{useMaxWidth:!0},theme:"dark"})</script><pre class=mermaid>
+flowchart LR
+    A((New)) -->|Start| B((Running))
+    A -->|Archive| D
+    B -->|Stop| C((Stopped))
+    C -->|Start| B
+    C -->|Archive| D((Archived))
+</pre><h2 id=odata-setup>OData setup
+<a class=anchor href=#odata-setup>#</a></h2><p>The key part here is getting the EDM model right for the resource hierarchy. To do this I will leverage &ldquo;Contained&rdquo; entities.</p><p>I have looked into generating the EDM model and the controllers from event aggregates and commands, but decided against it for two reasons: public service surface can change differently than internal models, and the complexity of writing robust code generating isn&rsquo;t worth it when the code is very simple boilerplate (which also can be generated with gen AI).</p><p>I will also note that I will use
+<a href=https://github.com/dotnet/aspnet-api-versioning>Asp.Versioning</a> to provide evolution support for the OData APIs and leverage their improved support for ApiExplorer for generating an OpenAPI document. From what I understand, the API versioning integrating with OData is implemented in a way which kind of assumes the whole API surface is versioned in order to correctly provide a full EDM metadata document. Because of this it makes sense to use URL segment versioning.</p><p>Based on the following examples:
+<a href=https://github.com/dotnet/aspnet-api-versioning/tree/main/examples/AspNetCore/OData/ODataOpenApiExample>Ex1</a>,
+<a href=https://github.com/RicoSuter/NSwag/tree/master/src/NSwag.Generation.AspNetCore.Tests.Web>Ex2</a>
+DRAFT:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-csharp data-lang=csharp><span style=display:flex><span>builder.Services.AddControllers()
+</span></span><span style=display:flex><span>                .AddOData(options =&gt;
+</span></span><span style=display:flex><span>                {
+</span></span><span style=display:flex><span>                    options.Count().Select().OrderBy().Filter().Expand();
+</span></span><span style=display:flex><span>                });
+</span></span><span style=display:flex><span>builder.Services.AddProblemDetails();
+</span></span><span style=display:flex><span>builder.Services.AddApiVersioning(options =&gt;
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// version config</span>
+</span></span><span style=display:flex><span>    options.AssumeDefaultVersionWhenUnspecified = <span style=color:#66d9ef>false</span>;
+</span></span><span style=display:flex><span>    options.ReportApiVersions = <span style=color:#66d9ef>true</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// use URL segment</span>
+</span></span><span style=display:flex><span>    options.ApiVersionReader = <span style=color:#66d9ef>new</span> UrlSegmentApiVersionReader();
+</span></span><span style=display:flex><span>})
+</span></span><span style=display:flex><span>.AddOData(options =&gt; 
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// separate data and management routes</span>
+</span></span><span style=display:flex><span>    options.AddRouteComponents(<span style=color:#e6db74>&#34;api/mgmt&#34;</span>);
+</span></span><span style=display:flex><span>    options.AddRouteComponents(<span style=color:#e6db74>&#34;api/data&#34;</span>);
+</span></span><span style=display:flex><span>})
+</span></span><span style=display:flex><span>.AddODataApiExplorer(options =&gt; {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// allow for v1, v2 etc format: &#39;v&#39;major[.minor][-status]</span>
+</span></span><span style=display:flex><span>    options.GroupNameFormat = <span style=color:#e6db74>&#34;&#39;v&#39;VVV&#34;</span>;
+</span></span><span style=display:flex><span>    options.SubstituteApiVersionInUrl = <span style=color:#66d9ef>true</span>;
+</span></span><span style=display:flex><span>});
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// NSwag</span>
+</span></span><span style=display:flex><span>services.AddOpenApiDocument(document =&gt; 
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    document.DocumentName = <span style=color:#e6db74>&#34;v1&#34;</span>;
+</span></span><span style=display:flex><span>    document.ApiGroupNames = [<span style=color:#e6db74>&#34;v1&#34;</span>];
+</span></span><span style=display:flex><span>});
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>app.UseVersionedODataBatching();
+</span></span><span style=display:flex><span>app.UseOpenApi();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> (app.Environment.IsDevelopment())
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Access ~/$odata to identify OData endpoints that failed to match a route template.</span>
+</span></span><span style=display:flex><span>    app.UseODataRouteDebug();
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Access ~/swagger for UI view of the OpenApi definitions</span>
+</span></span><span style=display:flex><span>    app.UseSwaggerUi3();
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>With the above configuration out of the way, let&rsquo;s look at a snippet of the model and interaction with Wolverine.</p><p>opts.Projections.Snapshot<project>(SnapshotLifecycle.Inline);</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-csharp data-lang=csharp><span style=display:flex><span><span style=color:#66d9ef>public</span> <span style=color:#66d9ef>record</span> <span style=color:#a6e22e>class</span> ProjectCreated(Guid ProjectId, <span style=color:#66d9ef>string</span> ProjectName);
+</span></span><span style=display:flex><span><span style=color:#66d9ef>public</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>Project</span>(Guid Id, <span style=color:#66d9ef>string</span> ProjectName)
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span><span style=color:#a6e22e>    [JsonIgnore]</span> <span style=color:#75715e>// navigation property for OData $expand queries</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>public</span> Configuration Configuration =&gt; CurrentSession.LoadProjectConfiguration(<span style=color:#66d9ef>this</span>.ProjectName);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>public</span> List&lt;ProjectSettings&gt; Settings { <span style=color:#66d9ef>get</span>; <span style=color:#66d9ef>set</span>; }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>static</span> Project Create(ProjectCreated created) =&gt; <span style=color:#66d9ef>new</span>(created.ProjectId, created.ProjectName);
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>public</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>ProjectModelConfiguration</span> : IModelConfiguration
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>void</span> Apply(ODataModelBuilder builder, ApiVersion apiVersion, <span style=color:#66d9ef>string</span> routePrefix)
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> (routePrefix != <span style=color:#e6db74>&#34;api/mgmt&#34;</span>) <span style=color:#66d9ef>return</span>;
+</span></span><span style=display:flex><span>        
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>var</span> projects = builder.EntitySet&lt;ProjectModel&gt;(<span style=color:#e6db74>&#34;Projects&#34;</span>).EntityType;
+</span></span><span style=display:flex><span>        projects.HasMany(p =&gt; p.Settings).Contained();
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span><span style=color:#a6e22e>
+</span></span></span><span style=display:flex><span><span style=color:#a6e22e>[ApiVersion(1.0)]</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>[Route(&#34;api/mgmt/{v:apiVersion}/projects&#34;)]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>public</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>ProjectsController</span>(IDocumentSession session) : ODataController
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span><span style=color:#a6e22e>    [EnableQuery]</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>    [ProducesResponseType( typeof( ODataValue&lt;IEnumerable&lt;ProjectModel&gt;&gt; ), Status200OK )]</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>public</span> IActionResult Get() =&gt; Ok(session.Query&lt;Project&gt;());
+</span></span><span style=display:flex><span><span style=color:#a6e22e>
+</span></span></span><span style=display:flex><span><span style=color:#a6e22e>    [EnableQuery]</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>    [ProducesResponseType( typeof( ODataValue&lt;ProjectModel&gt; ), Status200OK )]</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>    [ProducesResponseType( typeof( ProblemDetails ), Status404NotFound )]</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>public</span> IActionResult Get(<span style=color:#66d9ef>string</span> name)
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>var</span> project = session.Query&lt;Project&gt;().FirstOrDefault(p =&gt; p.ProjectName == name);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> (project <span style=color:#66d9ef>is</span> <span style=color:#66d9ef>null</span>)
+</span></span><span style=display:flex><span>        {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> NotFound();
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> Ok(project);
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><span class="flex align-center" title='Last modified by Marian Dziubiak | August 25, 2026'><img src=/svg/calendar.svg class=book-icon alt=Calendar>
+<span>Last modified August 25, 2026</span></span></div></div><script>(function(){function e(e){const t=window.getSelection(),n=document.createRange();n.selectNodeContents(e),t.removeAllRanges(),t.addRange(n)}document.querySelectorAll("pre code").forEach(t=>{t.addEventListener("click",function(){if(window.getSelection().toString())return;e(t.parentElement),navigator.clipboard&&navigator.clipboard.writeText(t.parentElement.textContent)})})})()</script></footer><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents><ul><li><a href=#resources>Resources</a></li><li><a href=#command-and-query-responsibility-segregation>Command and Query Responsibility Segregation</a></li><li><a href=#odata-setup>OData setup</a></li></ul></nav></div></aside></main></body></html>
